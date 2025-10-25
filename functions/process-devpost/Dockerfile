@@ -1,11 +1,17 @@
-FROM python:3.13-slim
+FROM public.ecr.aws/lambda/python:3.13
 
-RUN apt-get update
-RUN 
+# install chrome dependencies
+RUN dnf install -y atk cups-libs gtk3 libXcomposite alsa-lib \
+    libXcursor libXdamage libXext libXi libXrandr libXScrnSaver \
+    libXtst pango at-spi2-atk libXt xorg-x11-server-Xvfb \
+    xorg-x11-xauth dbus-glib dbus-glib-devel nss mesa-libgbm jq unzip
 
-WORKDIR /app
-COPY . .
+COPY ./chrome-installer.sh ./chrome-installer.sh
+RUN ./chrome-installer.sh
+RUN rm ./chrome-installer.sh
 
-RUN pip install -r requirements.txt
+RUN pip install selenium pydantic
 
-CMD ["python", "main.py"]
+COPY main.py ./
+
+CMD [ "main.lambda_handler" ] 
