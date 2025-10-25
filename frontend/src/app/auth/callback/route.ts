@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
+import { Resend } from "resend";
 // The client you created from the Server-Side Auth instructions
 import { createClient } from "@/lib/supabase/server";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -96,6 +99,24 @@ export async function GET(request: Request) {
           console.error('Error creating profile:', profileError);
           // Continue with redirect even if profile creation fails
           // The user can still proceed and we'll handle it in onboarding
+        }
+
+        // Send welcome email
+        if (email) {
+          await resend.emails.send({
+            from: 'Crax <hello@crax.app>',
+            to: [email],
+            subject: 'Welcome to Crax!',
+            html: `
+              <div style="font-family: Arial, sans-serif; color: #222;">
+                <p>Dear Builder,</p>
+                <p>Welcome to Crax - the social platform for builders.<br>
+                You can access the platform at <a href="https://crax.app/app" style="color:#1a73e8;">https://crax.app/app</a> to share your journey with others.</p>
+                <p>Keep hacking on,<br>
+                <a href="https://crax.app" style="color:#1a73e8;">Crax</a></p>
+              </div>
+            `,
+          });
         }
       } else if (isLinkedInConnection) {
         // Update existing profile with LinkedIn data
