@@ -114,9 +114,10 @@ export function CreatePost({ onPostCreated }: CreatePostProps) {
   const uploadToSupabase = async (file: File): Promise<string> => {
     const supabase = createClient()
     
-    // Generate unique filename with UUID
+    // Generate unique filename by appending UUID to original filename
     const fileExtension = file.name.split('.').pop()
-    const fileName = `${uuidv4()}.${fileExtension}`
+    const fileNameWithoutExtension = file.name.substring(0, file.name.lastIndexOf('.'))
+    const fileName = `${fileNameWithoutExtension}-${uuidv4()}.${fileExtension}`
     
     // Determine folder based on file type
     const folder = file.type.startsWith('image/') ? 'images' : 'videos'
