@@ -1,18 +1,42 @@
-FROM public.ecr.aws/lambda/python:3.13
+FROM python:3.13-slim
 
-# install chrome dependencies
-RUN dnf install -y atk cups-libs gtk3 libXcomposite alsa-lib \
-    libXcursor libXdamage libXext libXi libXrandr libXScrnSaver \
-    libXtst pango at-spi2-atk libXt xorg-x11-server-Xvfb \
-    xorg-x11-xauth dbus-glib dbus-glib-devel nss mesa-libgbm jq unzip
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    unzip \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Chrome dependencies
+RUN apt-get update && apt-get install -y \
+    at-spi2-core \
+    libatk-bridge2.0-0 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libgbm1 \
+    libxss1 \
+    libasound2 \
+    libatspi2.0-0 \
+    libgtk-3-0 \
+    libgdk-pixbuf2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY ./chrome-installer.sh ./chrome-installer.sh
 RUN chmod +x ./chrome-installer.sh
 RUN ./chrome-installer.sh
 RUN rm ./chrome-installer.sh
 
-RUN pip install selenium pydantic
+COPY requirements.txt ./
+RUN pip install -r requirements.txt
 
 COPY main.py ./
 
-CMD [ "main.lambda_handler" ] 
+# Expose port 8080 for Cloud Run
+EXPOSE 8080
+
+# Run the FastAPI app
+CMD ["python", "main.py"] 

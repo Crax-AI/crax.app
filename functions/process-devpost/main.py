@@ -1,6 +1,6 @@
 import logging
 import json
-
+import os
 from tempfile import mkdtemp
 from typing import List
 from selenium import webdriver
@@ -8,6 +8,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from pydantic import BaseModel
 from selenium.webdriver.common.by import By
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel as PydanticBaseModel
 
 
 class DevpostProject(BaseModel):
@@ -16,6 +18,15 @@ class DevpostProject(BaseModel):
     url: str
     thumbnail_url: str
     # description: str
+
+
+class ProcessDevpostRequest(PydanticBaseModel):
+    devpost_url: str
+
+
+class ProcessDevpostResponse(PydanticBaseModel):
+    status: str
+    projects: List[DevpostProject]
 
 
 logger = logging.getLogger()
@@ -49,17 +60,8 @@ def initialise_driver():
     return driver
 
 
-def lambda_handler(event, context):
-    devpost_url = event.get("devpost_url")
-
+def process_devpost_projects(devpost_url: str):
     driver = initialise_driver()
-    driver.get(devpost_url)
-
-    options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
-    driver = webdriver.Chrome(options=options)
-
-    devpost_url = input("Enter Devpost URL: ")
     driver.get(devpost_url)
 
     devpost_projects: List[DevpostProject] = []
@@ -102,11 +104,37 @@ def lambda_handler(event, context):
         logger.info(f"Fetched project {i + 1} of {projects_count}")
 
     logger.info(devpost_projects)
+    
+    driver.quit()
+    
+    return devpost_projects
 
-    return {
-      "statusCode": 200,
-      "headers": {
-        "Content-Type": "application/json",
-      },
-      "body": json.dumps(devpost_projects),
-    }
+
+# Initialize FastAPI app
+app = FastAPI(title="Devpost Processor", version="1.0.0")
+
+
+@app.post('/process-devpost', response_model=ProcessDevpostResponse)
+async def handle_process_devpost(request: ProcessDevpostRequest):
+    try:
+        projects = process_devpost_projects(request.devpost_url)
+        
+        return ProcessDevpostResponse(
+            status='success',
+            projects=projects
+        )
+        
+    except Exception as e:
+        logger.error(f"Error processing devpost: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get('/health')
+async def health_check():
+    return {'status': 'healthy'}
+
+
+if __name__ == '__main__':
+    import uvicorn
+    port = int(os.environ.get('PORT', 8080))
+    uvicorn.run(app, host='0.0.0.0', port=port)
