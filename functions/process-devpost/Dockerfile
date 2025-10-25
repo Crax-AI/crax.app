@@ -7,6 +7,7 @@ RUN dnf install -y atk cups-libs gtk3 libXcomposite alsa-lib \
     xorg-x11-xauth dbus-glib dbus-glib-devel nss mesa-libgbm jq unzip
 
 COPY ./chrome-installer.sh ./chrome-installer.sh
+RUN chmod +x ./chrome-installer.sh
 RUN ./chrome-installer.sh
 RUN rm ./chrome-installer.sh
 
