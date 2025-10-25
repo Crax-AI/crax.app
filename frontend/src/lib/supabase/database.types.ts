@@ -172,6 +172,7 @@ export type Database = {
       profiles: {
         Row: {
           about: string | null
+          affiliation: string | null
           created_at: string
           deleted_at: string | null
           devpost_url: string | null
@@ -185,9 +186,11 @@ export type Database = {
           linkedin_url: string
           onboarded_at: string | null
           updated_at: string
+          username: string
         }
         Insert: {
           about?: string | null
+          affiliation?: string | null
           created_at?: string
           deleted_at?: string | null
           devpost_url?: string | null
@@ -201,9 +204,11 @@ export type Database = {
           linkedin_url: string
           onboarded_at?: string | null
           updated_at?: string
+          username: string
         }
         Update: {
           about?: string | null
+          affiliation?: string | null
           created_at?: string
           deleted_at?: string | null
           devpost_url?: string | null
@@ -217,6 +222,7 @@ export type Database = {
           linkedin_url?: string
           onboarded_at?: string | null
           updated_at?: string
+          username?: string
         }
         Relationships: []
       }

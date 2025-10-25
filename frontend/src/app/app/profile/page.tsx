@@ -96,7 +96,7 @@ export default function ProfilePage() {
   }
 
   const fullName = `${profile.first_name} ${profile.last_name}`
-  const username = profile.github_url.split('/').pop() || 'user'
+  const username = profile.username || 'user'
 
   return (
     <div className="flex flex-col h-full">

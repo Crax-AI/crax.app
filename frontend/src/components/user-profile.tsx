@@ -10,8 +10,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useRouter } from "next/navigation";
 
 export function UserProfile() {
+  const router = useRouter();
   const { user, profile, loading } = useUserProfile();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -19,6 +22,7 @@ export function UserProfile() {
     const supabase = createClient();
     await supabase.auth.signOut();
     setIsOpen(false);
+    router.push("/");
   };
 
   return (
@@ -39,9 +43,12 @@ export function UserProfile() {
               className="w-full justify-start p-0 h-auto hover:bg-transparent"
             >
               <div className="flex items-center gap-2 sm:gap-3 w-full">
-                <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                </div>
+                <Avatar className="h-8 w-8 flex-shrink-0">
+                  <AvatarImage src={profile.image_url || undefined} alt={`${profile.first_name} ${profile.last_name}`} />
+                  <AvatarFallback className="text-xs">
+                    {profile.first_name?.[0]}{profile.last_name?.[0]}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="flex-1 min-w-0 hidden sm:block text-left">
                   <p className="text-sm font-medium text-foreground truncate">
                     {profile.first_name} {profile.last_name}
@@ -76,9 +83,11 @@ export function UserProfile() {
         </Popover>
       ) : (
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-            <User className="h-4 w-4 text-muted-foreground" />
-          </div>
+          <Avatar className="h-8 w-8 flex-shrink-0">
+            <AvatarFallback>
+              <User className="h-4 w-4 text-muted-foreground" />
+            </AvatarFallback>
+          </Avatar>
           <div className="flex-1 min-w-0 hidden sm:block">
             <p className="text-sm font-medium text-foreground truncate">
               Guest User

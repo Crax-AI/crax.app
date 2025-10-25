@@ -49,7 +49,7 @@ export const Person = ({ profile }: PersonProps) => {
   const router = useRouter()
   
   const fullName = `${profile.first_name} ${profile.last_name}`
-  const username = profile.github_url.split('/').pop() || 'user'
+  const username = profile.username || 'user'
   const bio = getBioText(profile)
   const joinDate = formatJoinDate(profile.created_at)
   

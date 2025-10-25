@@ -19,5 +19,5 @@ export default async function OnboardingPage() {
     return redirect("/app/feed");
   }
 
-  return redirect("/app/onboarding/1");
+  return redirect("/onboarding/0");
 }
