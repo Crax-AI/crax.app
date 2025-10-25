@@ -18,6 +18,8 @@ interface PostWithAuthorJoin {
     last_name: string
     image_url: string | null
     github_url: string
+    affiliation: string | null
+    headline: string | null
   }
 }
 
@@ -30,7 +32,8 @@ function transformPostData(post: PostWithDetails): PostData {
     video_url: post.video_url,
     author: {
       full_name: `${post.author.first_name} ${post.author.last_name}`,
-      tagline: 'TODO TAGLINE',
+      tagline: post.author.headline || '',
+      affiliation: post.author.affiliation,
       profile_picture_url: post.author.image_url,
       profile_url: `/app/user/${post.author.id}`
     },
@@ -43,7 +46,7 @@ function transformPostData(post: PostWithDetails): PostData {
       description: comment.description,
       author: {
         full_name: `${comment.author.first_name} ${comment.author.last_name}`,
-        tagline: comment.author.github_url.split('/').pop() || '',
+        tagline: comment.author.headline || '',
         profile_picture_url: comment.author.image_url || null
       },
       created_at: comment.created_at
@@ -114,7 +117,7 @@ export async function getPosts(limit: number = 20, offset: number = 0, currentUs
       ...post,
       author: post.author,
       likes_count: postLikes.length,
-      comments: postComments.map((comment: { id: string; description: string; created_at: string; post_id: string; author_id: string; author: { id: string; first_name: string; last_name: string; image_url: string | null; github_url: string } }) => ({
+      comments: postComments.map((comment: { id: string; description: string; created_at: string; post_id: string; author_id: string; author: { id: string; first_name: string; last_name: string; image_url: string | null; github_url: string; affiliation: string | null; headline: string | null } }) => ({
         id: comment.id,
         description: comment.description,
         created_at: comment.created_at,
@@ -176,7 +179,7 @@ export async function getPostById(id: string): Promise<PostWithDetails | null> {
     ...post,
     author: (post as PostWithAuthorJoin).author,
     likes_count: likes?.length || 0,
-    comments: comments?.map((comment: { id: string; description: string; created_at: string; post_id: string; author_id: string; author: { id: string; first_name: string; last_name: string; image_url: string | null; github_url: string } }) => ({
+    comments: comments?.map((comment: { id: string; description: string; created_at: string; post_id: string; author_id: string; author: { id: string; first_name: string; last_name: string; image_url: string | null; github_url: string; affiliation: string | null; headline: string | null } }) => ({
       id: comment.id,
       description: comment.description,
       created_at: comment.created_at,
@@ -227,7 +230,8 @@ export async function createPost(
     video_url: postWithAuthor.video_url,
     author: {
       full_name: `${postWithAuthor.author.first_name} ${postWithAuthor.author.last_name}`,
-      tagline: 'TODO TAGLINE',
+      tagline: postWithAuthor.author.headline || '',
+      affiliation: postWithAuthor.author.affiliation,
       profile_picture_url: postWithAuthor.author.image_url,
       profile_url: `/app/user/${postWithAuthor.author.id}`
     },
@@ -300,7 +304,7 @@ export async function getUserPosts(userId: string, limit: number = 20, offset: n
       ...post,
       author: post.author,
       likes_count: postLikes.length,
-      comments: postComments.map((comment: { id: string; description: string; created_at: string; post_id: string; author_id: string; author: { id: string; first_name: string; last_name: string; image_url: string | null; github_url: string } }) => ({
+      comments: postComments.map((comment: { id: string; description: string; created_at: string; post_id: string; author_id: string; author: { id: string; first_name: string; last_name: string; image_url: string | null; github_url: string; affiliation: string | null; headline: string | null } }) => ({
         id: comment.id,
         description: comment.description,
         created_at: comment.created_at,

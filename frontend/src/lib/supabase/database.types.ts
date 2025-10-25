@@ -179,6 +179,7 @@ export type Database = {
           email: string | null
           first_name: string
           github_url: string
+          headline: string | null
           id: string
           image_url: string | null
           last_name: string
@@ -197,6 +198,7 @@ export type Database = {
           email?: string | null
           first_name: string
           github_url: string
+          headline?: string | null
           id?: string
           image_url?: string | null
           last_name: string
@@ -215,6 +217,7 @@ export type Database = {
           email?: string | null
           first_name?: string
           github_url?: string
+          headline?: string | null
           id?: string
           image_url?: string | null
           last_name?: string
@@ -233,6 +236,7 @@ export type Database = {
           devpost_url: string | null
           github_url: string | null
           id: string
+          is_public: boolean | null
           started_at: string
           tagline: string | null
           thumbnail_url: string | null
@@ -247,6 +251,7 @@ export type Database = {
           devpost_url?: string | null
           github_url?: string | null
           id?: string
+          is_public?: boolean | null
           started_at?: string
           tagline?: string | null
           thumbnail_url?: string | null
@@ -261,6 +266,7 @@ export type Database = {
           devpost_url?: string | null
           github_url?: string | null
           id?: string
+          is_public?: boolean | null
           started_at?: string
           tagline?: string | null
           thumbnail_url?: string | null

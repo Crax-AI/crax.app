@@ -39,10 +39,10 @@ logger.setLevel(logging.INFO)
 def get_supabase_client() -> Client:
     logger.info("Initializing Supabase client")
     supabase_url = os.environ.get("SUPABASE_URL")
-    supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    supabase_key = os.environ.get("SUPABASE_SECRET_KEY")
     
     if not supabase_url or not supabase_key:
-        logger.error("Supabase configuration missing - check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables")
+        logger.error("Supabase configuration missing - check SUPABASE_URL and SUPABASE_SECRET_KEY environment variables")
         raise HTTPException(status_code=500, detail="Supabase configuration missing")
     
     logger.info("Supabase configuration found, creating client")

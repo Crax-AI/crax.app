@@ -5,6 +5,7 @@ description = "The social platform for builders"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "anthropic>=0.71.0",
     "dotenv>=0.9.9",
     "fastapi[standard]>=0.120.0",
     "functions-framework>=3.9.2",

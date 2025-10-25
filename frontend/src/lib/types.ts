@@ -21,6 +21,8 @@ export interface CommentWithAuthor extends Comment {
     last_name: string
     image_url: string | null
     github_url: string
+    affiliation: string | null
+    headline: string | null
   }
 }
 
@@ -31,6 +33,8 @@ export interface PostWithDetails extends Post {
     last_name: string
     image_url: string | null
     github_url: string
+    affiliation: string | null
+    headline: string | null
   }
   likes_count: number
   comments: CommentWithAuthor[]

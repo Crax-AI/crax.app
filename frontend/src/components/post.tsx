@@ -52,6 +52,7 @@ export interface PostData {
   author: {
     full_name: string
     tagline: string
+    affiliation: string | null
     profile_picture_url?: string | null
     profile_url: string
   }
@@ -81,6 +82,21 @@ function formatTimeAgo(dateString: string): string {
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`
   if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d`
   return `${Math.floor(diffInSeconds / 2592000)}mo`
+}
+
+function getPostTypeConfig(type: string) {
+  const configs = {
+    post: { emoji: '📝', label: 'Post', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+    update: { emoji: '🚧', label: 'Progress update', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+    insight: { emoji: '💡', label: 'Insight', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+    launch: { emoji: '🚀', label: 'Launch', color: 'bg-green-100 text-green-800 border-green-200' }
+  }
+  
+  return configs[type as keyof typeof configs] || { 
+    emoji: '📄', 
+    label: type.charAt(0).toUpperCase() + type.slice(1), 
+    color: 'bg-gray-100 text-gray-800 border-gray-200' 
+  }
 }
 
 export const Post = ({ post, currentUserId, onLike, onComment, onProfileClick }: PostProps) => {
@@ -162,7 +178,13 @@ export const Post = ({ post, currentUserId, onLike, onComment, onProfileClick }:
             >
               {post.author.full_name}
             </button>
-            <span className="text-muted-foreground truncate min-w-0">@{post.author.tagline}</span>
+            {post.author.affiliation && (
+              <>
+                <span className="text-muted-foreground truncate min-w-0">{post.author.affiliation}</span>
+                <span className="text-muted-foreground flex-shrink-0">·</span>
+              </>
+            )}
+            <span className="text-muted-foreground truncate min-w-0">{post.author.tagline}</span>
             <span className="text-muted-foreground flex-shrink-0">·</span>
             <span className="text-muted-foreground flex-shrink-0">{timeAgo}</span>
             {isEdited && (
@@ -171,9 +193,18 @@ export const Post = ({ post, currentUserId, onLike, onComment, onProfileClick }:
                 <span className="text-muted-foreground text-xs flex-shrink-0">edited</span>
               </>
             )}
-            <Badge variant="secondary" className="ml-auto text-xs flex-shrink-0">
-              {post.type}
-            </Badge>
+            {(() => {
+              const typeConfig = getPostTypeConfig(post.type)
+              return (
+                <Badge 
+                  variant="secondary" 
+                  className={`ml-auto text-xs flex-shrink-0 border ${typeConfig.color}`}
+                >
+                  <span className="mr-1">{typeConfig.emoji}</span>
+                  {typeConfig.label}
+                </Badge>
+              )
+            })()}
           </div>
           
           {/* Post Content */}
