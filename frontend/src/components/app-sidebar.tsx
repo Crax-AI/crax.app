@@ -1,10 +1,11 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Home, Users, User } from "lucide-react"
-import { useUserProfile } from "@/hooks/use-user-profile"
+import { Home, Users, User, Hammer } from "lucide-react"
+import { UserProfile } from "@/components/user-profile"
 
 const navigation = [
   {
@@ -18,6 +19,11 @@ const navigation = [
     icon: Users,
   },
   {
+    name: "Projects",
+    href: "/app/projects",
+    icon: Hammer,
+  },
+  {
     name: "Profile",
     href: "/app/profile",
     icon: User,
@@ -26,17 +32,25 @@ const navigation = [
 
 export function AppSidebar() {
   const pathname = usePathname()
-  const { user, profile, loading } = useUserProfile()
 
   return (
-    <div className="flex h-full w-64 flex-col border-r border-border bg-background">
+    <div className="flex h-full w-16 sm:w-48 lg:w-64 flex-col border-r border-border bg-background">
       {/* Logo */}
-      <div className="flex h-16 items-center px-6">
-        <h1 className="text-xl font-bold text-foreground">Crax</h1>
+      <div className="flex h-16 items-center px-3 sm:px-6">
+        <div className="flex items-center gap-2 sm:gap-3 sm:justify-start justify-center w-full">
+          <Image
+            src="/crax-logo-dark.png"
+            alt="Crax"
+            width={32}
+            height={32}
+            className="h-8 w-8 rounded-md"
+          />
+          <h1 className="text-xl font-bold text-foreground hidden sm:block">Crax</h1>
+        </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      <nav className="flex-1 space-y-1 px-1 sm:px-3 py-4">
         {navigation.map((item) => {
           const isActive = pathname === item.href
           return (
@@ -44,59 +58,23 @@ export function AppSidebar() {
               key={item.name}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                "flex items-center gap-3 rounded-lg px-2 sm:px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                "sm:justify-start justify-center",
                 isActive
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground"
               )}
+              title={item.name}
             >
-              <item.icon className="h-5 w-5" />
-              {item.name}
+              <item.icon className="h-5 w-5 flex-shrink-0" />
+              <span className="hidden sm:block">{item.name}</span>
             </Link>
           )
         })}
       </nav>
 
       {/* User Profile Section */}
-      <div className="border-t border-border p-4">
-        {loading ? (
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
-            <div className="flex-1 min-w-0">
-              <div className="h-4 bg-muted animate-pulse rounded mb-1" />
-              <div className="h-3 bg-muted animate-pulse rounded w-20" />
-            </div>
-          </div>
-        ) : user && profile ? (
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-              <User className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
-                {profile.first_name} {profile.last_name}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">
-                @{user.email?.split('@')[0] || 'user'}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-              <User className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
-                Guest User
-              </p>
-              <p className="text-xs text-muted-foreground truncate">
-                Not signed in
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
+      <UserProfile />
     </div>
   )
 }

@@ -31,6 +31,7 @@ import { MessageCircle, Heart, Share } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { likePost, unlikePost } from "@/lib/supabase/posts"
 
 export interface Comment {
   id: string
@@ -64,6 +65,7 @@ export interface PostData {
 
 interface PostProps {
   post: PostData
+  currentUserId?: string
   onLike?: (postId: string) => void
   onComment?: (postId: string, comment: string) => void
   onProfileClick?: (profileUrl: string) => void
@@ -81,19 +83,49 @@ function formatTimeAgo(dateString: string): string {
   return `${Math.floor(diffInSeconds / 2592000)}mo`
 }
 
-export const Post = ({ post, onLike, onComment, onProfileClick }: PostProps) => {
+export const Post = ({ post, currentUserId, onLike, onComment, onProfileClick }: PostProps) => {
   const [showComments, setShowComments] = useState(false)
   const [newComment, setNewComment] = useState("")
   const [isLiked, setIsLiked] = useState(post.is_liked || false)
   const [likesCount, setLikesCount] = useState(post.likes_count)
+  const [isLiking, setIsLiking] = useState(false)
 
   const isEdited = post.created_at !== post.updated_at
   const timeAgo = formatTimeAgo(post.created_at)
 
-  const handleLike = () => {
-    setIsLiked(!isLiked)
-    setLikesCount(prev => isLiked ? prev - 1 : prev + 1)
-    onLike?.(post.id)
+  const handleLike = async () => {
+    if (!currentUserId || isLiking) return
+
+    setIsLiking(true)
+    const newLikedState = !isLiked
+    
+    // Optimistically update UI
+    setIsLiked(newLikedState)
+    setLikesCount(prev => newLikedState ? prev + 1 : prev - 1)
+
+    try {
+      let success = false
+      if (newLikedState) {
+        success = await likePost(post.id, currentUserId)
+      } else {
+        success = await unlikePost(post.id, currentUserId)
+      }
+
+      if (!success) {
+        // Revert optimistic update on failure
+        setIsLiked(!newLikedState)
+        setLikesCount(prev => newLikedState ? prev - 1 : prev + 1)
+      } else {
+        onLike?.(post.id)
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error)
+      // Revert optimistic update on error
+      setIsLiked(!newLikedState)
+      setLikesCount(prev => newLikedState ? prev - 1 : prev + 1)
+    } finally {
+      setIsLiking(false)
+    }
   }
 
   const handleComment = () => {
@@ -123,23 +155,23 @@ export const Post = ({ post, onLike, onComment, onProfileClick }: PostProps) => 
         
         <div className="flex-1 min-w-0">
           {/* Author Info */}
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-2 min-w-0">
             <button 
               onClick={handleProfileClick}
-              className="font-semibold text-foreground hover:underline"
+              className="font-semibold text-foreground hover:underline whitespace-nowrap flex-shrink-0"
             >
               {post.author.full_name}
             </button>
-            <span className="text-muted-foreground">@{post.author.tagline}</span>
-            <span className="text-muted-foreground">·</span>
-            <span className="text-muted-foreground">{timeAgo}</span>
+            <span className="text-muted-foreground truncate min-w-0">@{post.author.tagline}</span>
+            <span className="text-muted-foreground flex-shrink-0">·</span>
+            <span className="text-muted-foreground flex-shrink-0">{timeAgo}</span>
             {isEdited && (
               <>
-                <span className="text-muted-foreground">·</span>
-                <span className="text-muted-foreground text-xs">edited</span>
+                <span className="text-muted-foreground flex-shrink-0">·</span>
+                <span className="text-muted-foreground text-xs flex-shrink-0">edited</span>
               </>
             )}
-            <Badge variant="secondary" className="ml-auto text-xs">
+            <Badge variant="secondary" className="ml-auto text-xs flex-shrink-0">
               {post.type}
             </Badge>
           </div>
@@ -157,7 +189,7 @@ export const Post = ({ post, onLike, onComment, onProfileClick }: PostProps) => 
                 alt="Post image" 
                 width={500}
                 height={300}
-                className="rounded-lg max-w-full h-auto max-h-96 object-cover"
+                className="rounded-lg w-full h-auto max-h-96 object-contain"
               />
             </div>
           )}
@@ -167,7 +199,7 @@ export const Post = ({ post, onLike, onComment, onProfileClick }: PostProps) => 
               <video 
                 src={post.video_url} 
                 controls 
-                className="rounded-lg max-w-full h-auto max-h-96"
+                className="rounded-lg w-full h-auto max-h-96"
               >
                 Your browser does not support the video tag.
               </video>
@@ -189,8 +221,9 @@ export const Post = ({ post, onLike, onComment, onProfileClick }: PostProps) => 
                 isLiked 
                   ? "text-red-500 hover:text-red-600" 
                   : "hover:text-foreground"
-              }`}
+              } ${isLiking ? "opacity-50 cursor-not-allowed" : ""}`}
               onClick={handleLike}
+              disabled={!currentUserId || isLiking}
             >
               <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
               <span className="text-sm">{likesCount}</span>

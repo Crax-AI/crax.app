@@ -21,11 +21,11 @@ export function useUserProfile(): UserProfile {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const supabase = createClient()
-
-    // Get initial session
-    const getInitialSession = async () => {
+    const getSessionAndProfile = async () => {
       try {
+        const supabase = createClient()
+        
+        // Get session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
         if (sessionError) {
@@ -34,58 +34,33 @@ export function useUserProfile(): UserProfile {
           return
         }
 
-        if (session?.user) {
-          setUser(session.user)
-          await fetchProfile(session.user.id)
-        } else {
+        if (!session?.user) {
           setLoading(false)
+          return
         }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred')
-        setLoading(false)
-      }
-    }
 
-    // Fetch user profile from profiles table
-    const fetchProfile = async (userId: string) => {
-      try {
-        const { data, error: profileError } = await supabase
+        setUser(session.user)
+
+        // Query profile table
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', userId)
+          .eq('id', session.user.id)
           .single()
 
         if (profileError) {
           setError(profileError.message)
         } else {
-          setProfile(data)
+          setProfile(profileData)
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch profile')
+        setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
         setLoading(false)
       }
     }
 
-    getInitialSession()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          setUser(session.user)
-          await fetchProfile(session.user.id)
-        } else {
-          setUser(null)
-          setProfile(null)
-          setLoading(false)
-        }
-      }
-    )
-
-    return () => {
-      subscription.unsubscribe()
-    }
+    getSessionAndProfile()
   }, [])
 
   return {

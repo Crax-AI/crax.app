@@ -30,8 +30,8 @@ export default function AppLayout({
         </div>
       </main>
       
-      {/* Right Sidebar - Empty for now */}
-      <div className="w-80 border-l border-border bg-background">
+      {/* Right Sidebar - Hidden on small screens */}
+      <div className="hidden lg:block w-80 border-l border-border bg-background">
         <div className="p-6">
           {/* <p className="text-sm text-muted-foreground">
             Right sidebar - coming soon

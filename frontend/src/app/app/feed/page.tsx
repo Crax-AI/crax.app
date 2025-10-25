@@ -6,22 +6,23 @@ At the top, you can also create your own post.
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Post, PostData } from "@/components/post"
+import { CreatePost } from "@/components/create-post"
 import { getPosts } from "@/lib/supabase/posts"
+import { useUserProfile } from "@/hooks/use-user-profile"
 
 export default function FeedPage() {
   const [posts, setPosts] = useState<PostData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { user, loading: userLoading } = useUserProfile()
 
   useEffect(() => {
     async function fetchPosts() {
       try {
         setLoading(true)
-        const fetchedPosts = await getPosts(20, 0)
+        const fetchedPosts = await getPosts(20, 0, user?.id)
         setPosts(fetchedPosts)
       } catch (err) {
         console.error("Error fetching posts:", err)
@@ -31,8 +32,10 @@ export default function FeedPage() {
       }
     }
 
-    fetchPosts()
-  }, [])
+    if (!userLoading) {
+      fetchPosts()
+    }
+  }, [user?.id, userLoading])
 
   const handleLike = (postId: string) => {
     console.log("Liked post:", postId)
@@ -49,36 +52,28 @@ export default function FeedPage() {
     // TODO: Implement navigation to profile
   }
 
+  const handlePostCreated = async () => {
+    // Refresh posts after creating a new one
+    try {
+      setLoading(true)
+      const fetchedPosts = await getPosts(20, 0, user?.id)
+      setPosts(fetchedPosts)
+    } catch (err) {
+      console.error("Error refreshing posts:", err)
+      setError("Failed to refresh posts. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="border-b border-border p-6">
-        <h1 className="text-2xl font-bold text-foreground mb-4">Feed</h1>
+      <div className="border-b border-border p-4 sm:p-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-4">Feed</h1>
         
         {/* Create Post */}
-        <div className="flex gap-4 p-4 bg-muted/30 rounded-lg">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src="" alt="Profile" />
-            <AvatarFallback>
-              <span className="text-sm">U</span>
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1">
-            <textarea
-              placeholder="What's happening? Share your latest project or idea..."
-              className="w-full bg-transparent border-none outline-none resize-none text-foreground placeholder:text-muted-foreground"
-              rows={3}
-            />
-            <div className="flex justify-between items-center mt-3">
-              <div className="flex gap-2">
-                <Button variant="ghost" size="sm">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              <Button size="sm">Post</Button>
-            </div>
-          </div>
-        </div>
+        <CreatePost onPostCreated={handlePostCreated} />
       </div>
 
       {/* Feed Content */}
@@ -99,6 +94,7 @@ export default function FeedPage() {
             <Post
               key={post.id}
               post={post}
+              currentUserId={user?.id}
               onLike={handleLike}
               onComment={handleComment}
               onProfileClick={handleProfileClick}

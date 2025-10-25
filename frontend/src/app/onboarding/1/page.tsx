@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   Field,
   FieldContent,
+  FieldDescription,
   FieldLabel,
 } from "@/components/ui/field";
 
@@ -36,12 +37,12 @@ export default function OnboardingPage1() {
                 }}
               >
                 <Github className="h-4 w-4" />
-                Connect Github
+                Connect GitHub
               </Button>
             </FieldContent>
-            {/* <FieldDescription>
-                Connect your Github account to get started.
-            </FieldDescription> */}
+            <FieldDescription>
+              Grant access to all repositories and organizations that you use most.
+            </FieldDescription>
           </Field>
 
           <Button asChild className="flex flex-row w-full items-center">

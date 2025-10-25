@@ -171,6 +171,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          about: string | null
           created_at: string
           deleted_at: string | null
           devpost_url: string | null
@@ -180,11 +181,13 @@ export type Database = {
           id: string
           image_url: string | null
           last_name: string
+          linkedin_data_raw: Json | null
           linkedin_url: string
           onboarded_at: string | null
           updated_at: string
         }
         Insert: {
+          about?: string | null
           created_at?: string
           deleted_at?: string | null
           devpost_url?: string | null
@@ -194,11 +197,13 @@ export type Database = {
           id?: string
           image_url?: string | null
           last_name: string
+          linkedin_data_raw?: Json | null
           linkedin_url: string
           onboarded_at?: string | null
           updated_at?: string
         }
         Update: {
+          about?: string | null
           created_at?: string
           deleted_at?: string | null
           devpost_url?: string | null
@@ -208,6 +213,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           last_name?: string
+          linkedin_data_raw?: Json | null
           linkedin_url?: string
           onboarded_at?: string | null
           updated_at?: string
@@ -225,6 +231,7 @@ export type Database = {
           tagline: string | null
           thumbnail_url: string | null
           title: string
+          type: string
           updated_at: string
           user_id: string
         }
@@ -238,6 +245,7 @@ export type Database = {
           tagline?: string | null
           thumbnail_url?: string | null
           title: string
+          type: string
           updated_at?: string
           user_id: string
         }
@@ -251,6 +259,7 @@ export type Database = {
           tagline?: string | null
           thumbnail_url?: string | null
           title?: string
+          type?: string
           updated_at?: string
           user_id?: string
         }
