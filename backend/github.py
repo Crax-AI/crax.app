@@ -1,10 +1,38 @@
 import os
 import logging
+import json
 from anthropic import Anthropic
 
 # Configure logging for this module
 logger = logging.getLogger(__name__)
 
+
+def clean_json_response(response_text: str) -> str:
+    """
+    Clean AI response text by removing markdown code blocks if present.
+    
+    Args:
+        response_text: Raw response text from AI
+        
+    Returns:
+        Cleaned text ready for JSON parsing
+    """
+    cleaned_response = response_text.strip()
+    
+    if cleaned_response.startswith("```json"):
+        # Remove ```json from start and ``` from end
+        cleaned_response = cleaned_response[7:]  # Remove "```json"
+        if cleaned_response.endswith("```"):
+            cleaned_response = cleaned_response[:-3]  # Remove trailing "```"
+        cleaned_response = cleaned_response.strip()
+    elif cleaned_response.startswith("```"):
+        # Handle generic code blocks
+        cleaned_response = cleaned_response[3:]  # Remove "```"
+        if cleaned_response.endswith("```"):
+            cleaned_response = cleaned_response[:-3]  # Remove trailing "```"
+        cleaned_response = cleaned_response.strip()
+    
+    return cleaned_response
 
 def summarize_commits(commit_messages: list[str]) -> str:
     """
@@ -119,6 +147,7 @@ Consider these factors:
 Respond with a JSON object containing:
 - "should_post": true/false
 - "reasoning": brief explanation of your decision
+Surround the JSON object with ```json and ```.
 
 Examples of what warrants posting:
 - New features or major functionality
@@ -152,10 +181,13 @@ Be selective - only post about meaningful progress."""
         response_text = message.content[0].text.strip()
         logger.info(f"Claude response: {response_text}")
         
+        # Clean the response text by removing markdown code blocks if present
+        cleaned_response = clean_json_response(response_text)
+        logger.info(f"Cleaned response: {cleaned_response}")
+        
         # Parse JSON response
-        import json
         try:
-            result = json.loads(response_text)
+            result = json.loads(cleaned_response)
             should_post = result.get("should_post", False)
             reasoning = result.get("reasoning", "No reasoning provided")
             
@@ -167,6 +199,7 @@ Be selective - only post about meaningful progress."""
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse Claude JSON response: {str(e)}")
             logger.error(f"Raw response: {response_text}")
+            logger.error(f"Cleaned response: {cleaned_response}")
             # Fallback: if we can't parse, be conservative and don't post
             return False, f"Failed to parse AI response: {str(e)}"
         
