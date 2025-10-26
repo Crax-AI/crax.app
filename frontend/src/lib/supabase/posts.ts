@@ -1,6 +1,7 @@
 import { createClient } from "./client"
 import { PostWithDetails, Profile } from "../types"
 import { PostData } from "@/components/post"
+import { Tables } from "./database.types"
 
 // Type for Supabase join result
 interface PostWithAuthorJoin {
@@ -438,4 +439,109 @@ export async function isPostLikedByUser(postId: string, userId: string): Promise
   }
 
   return !!data
+}
+
+export async function getUserProjects(userId: string): Promise<Tables<"projects">[]> {
+  const supabase = createClient()
+
+  const { data: projects, error } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("is_public", true)
+    .order("started_at", { ascending: false })
+
+  if (error) {
+    console.error("Error fetching user projects:", error)
+    return []
+  }
+
+  return projects || []
+}
+
+export async function getUserProfile(userId: string): Promise<Profile | null> {
+  const supabase = createClient()
+
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .is("deleted_at", null)
+    .single()
+
+  if (error) {
+    console.error("Error fetching user profile:", error)
+    return null
+  }
+
+  return profile
+}
+
+export async function isFollowingUser(followerId: string, followingId: string): Promise<boolean> {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from("follow")
+    .select("id")
+    .eq("follower_id", followerId)
+    .eq("following_id", followingId)
+    .single()
+
+  if (error) {
+    // If no follow relationship found, return false
+    return false
+  }
+
+  return !!data
+}
+
+export async function followUser(followerId: string, followingId: string): Promise<boolean> {
+  const supabase = createClient()
+
+  const { error } = await supabase
+    .from("follow")
+    .insert({
+      follower_id: followerId,
+      following_id: followingId
+    })
+
+  if (error) {
+    console.error("Error following user:", error)
+    return false
+  }
+
+  return true
+}
+
+export async function unfollowUser(followerId: string, followingId: string): Promise<boolean> {
+  const supabase = createClient()
+
+  const { error } = await supabase
+    .from("follow")
+    .delete()
+    .eq("follower_id", followerId)
+    .eq("following_id", followingId)
+
+  if (error) {
+    console.error("Error unfollowing user:", error)
+    return false
+  }
+
+  return true
+}
+
+export async function getUserPostsCount(userId: string): Promise<number> {
+  const supabase = createClient()
+
+  const { count, error } = await supabase
+    .from("posts")
+    .select("*", { count: "exact", head: true })
+    .eq("author_id", userId)
+
+  if (error) {
+    console.error("Error fetching user posts count:", error)
+    return 0
+  }
+
+  return count || 0
 }

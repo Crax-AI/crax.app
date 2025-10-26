@@ -6,6 +6,7 @@ import { Commit, Profile } from "@/lib/types"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { GitCommit, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 interface ActivityWithProfile extends Commit {
   profile: Profile
@@ -151,22 +152,28 @@ export function ActivitiesTimeline({ className }: ActivitiesTimelineProps) {
       <div className="space-y-3">
         {activities.map((activity) => (
           <div key={activity.id} className="flex items-start space-x-3">
-            <Avatar className="w-8 h-8">
-              <AvatarImage src={activity.profile.image_url || undefined} />
-              <AvatarFallback className="text-xs">
-                {activity.profile.first_name?.[0]}{activity.profile.last_name?.[0]}
-              </AvatarFallback>
-            </Avatar>
+            <Link href={`/app/users/${activity.profile.id}`}>
+              <Avatar className="w-8 h-8">
+                <AvatarImage src={activity.profile.image_url || undefined} />
+                <AvatarFallback className="text-xs">
+                  {activity.profile.first_name?.[0]}{activity.profile.last_name?.[0]}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
             
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-1 text-sm">
-                <span className="font-medium text-foreground">
+                <Link
+                  href={`/app/users/${activity.profile.id}`}
+                  className="font-medium text-foreground truncate inline-block align-baseline hover:underline"
+                  title={`@${activity.profile.username}`}
+                  style={{ verticalAlign: 'middle', minWidth: 0 }}
+                >
                   @{activity.profile.username}
-                </span>
-                <span className="text-muted-foreground">pushed a commit</span>
-                <GitCommit className="w-3 h-3 text-muted-foreground" />
+                </Link>
+                <span className="text-muted-foreground whitespace-nowrap">pushed a commit</span>
+                {/* <GitCommit className="w-3 h-3 text-muted-foreground" /> */}
               </div>
-              
               <p className="text-sm text-muted-foreground mt-1">
                 {truncateMessage(activity.message)}
               </p>
@@ -177,9 +184,14 @@ export function ActivitiesTimeline({ className }: ActivitiesTimelineProps) {
                   {formatTimeAgo(activity.pushed_at)}
                 </span>
                 <span className="text-xs text-muted-foreground">•</span>
-                <span className="text-xs text-muted-foreground">
+                <Link
+                  href={`https://github.com/${activity.owner_name}/${activity.repository_name}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-muted-foreground underline hover:text-foreground"
+                >
                   {activity.repository_name}
-                </span>
+                </Link>
               </div>
             </div>
           </div>
