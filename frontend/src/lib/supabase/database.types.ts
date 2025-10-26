@@ -56,6 +56,69 @@ export type Database = {
           },
         ]
       }
+      commits: {
+        Row: {
+          added_files: string[]
+          commit_id: string
+          committed_at: string
+          created_at: string
+          id: string
+          message: string
+          modified_files: string[]
+          post_id: string | null
+          pushed_at: string
+          removed_files: string[]
+          repository_id: string
+          repository_name: string
+          user_id: string
+        }
+        Insert: {
+          added_files?: string[]
+          commit_id: string
+          committed_at: string
+          created_at?: string
+          id?: string
+          message: string
+          modified_files?: string[]
+          post_id?: string | null
+          pushed_at: string
+          removed_files?: string[]
+          repository_id: string
+          repository_name: string
+          user_id: string
+        }
+        Update: {
+          added_files?: string[]
+          commit_id?: string
+          committed_at?: string
+          created_at?: string
+          id?: string
+          message?: string
+          modified_files?: string[]
+          post_id?: string | null
+          pushed_at?: string
+          removed_files?: string[]
+          repository_id?: string
+          repository_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commits_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follow: {
         Row: {
           created_at: string

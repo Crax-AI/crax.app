@@ -45,16 +45,16 @@ The server will start on `http://localhost:8000`.
 
 ### 4. Testing
 
-Test the Claude summarization without starting the server:
+Test the AI commit evaluation without starting the server:
 
 ```bash
-uv run python test_webhook.py summarize
+uv run python test_webhook_v2.py evaluate
 ```
 
 Test the full webhook endpoint (requires server to be running and .env configured):
 
 ```bash
-uv run python test_webhook.py webhook
+uv run python test_webhook_v2.py webhook
 ```
 
 ## GitHub Webhook Setup
@@ -72,11 +72,20 @@ uv run python test_webhook.py webhook
 
 1. GitHub sends a push webhook when code is pushed to the repository
 2. The server verifies the webhook signature for security
-3. Only processes pushes to the `main` branch
-4. Extracts commit messages from the webhook payload
-5. Resolves the GitHub user to a Supabase profile by matching GitHub URLs
-6. Uses Claude 4.5 Haiku to summarize commits into a casual "build in public" post
-7. Creates a new post in Supabase with type "push"
+3. **Repository filtering**: Only processes pushes to **public repositories** on the **main branch**
+4. **Commit storage**: All commits are stored in the `commits` table with detailed information
+5. **AI evaluation**: Claude analyzes recent commits to determine if they warrant a "build in public" post
+6. **Smart posting**: Only creates posts when AI determines there's meaningful progress worth sharing
+7. **Commit linking**: When a post is created, it's linked to the relevant commits via `post_id`
+
+### Key Features
+
+- **Repository Privacy Filter**: Automatically skips private repositories
+- **Branch Filtering**: Only processes pushes to the main branch
+- **Commit Tracking**: Stores all commits with file changes, timestamps, and metadata
+- **AI-Powered Decision Making**: Uses Claude to determine if commits warrant a social post
+- **Selective Posting**: Prevents spam by only posting about meaningful progress
+- **Commit-Post Linking**: Tracks which commits contributed to each post
 
 ## API Endpoints
 
@@ -97,17 +106,36 @@ Receives GitHub push webhooks.
 **Headers:**
 - `X-Hub-Signature-256`: GitHub's HMAC signature for verification
 
-**Response (success):**
+**Response (post created):**
 ```json
 {
   "message": "Post created successfully",
   "post_id": "uuid-here",
   "content": "The generated post content",
-  "commits_processed": 3
+  "commits_processed": 3,
+  "commits_linked": 3,
+  "reasoning": "Multiple commits show significant feature development"
 }
 ```
 
-**Response (skip):**
+**Response (commits stored, no post):**
+```json
+{
+  "message": "Commits stored but no post created",
+  "reasoning": "Minor changes don't warrant a build update",
+  "commits_stored": 2
+}
+```
+
+**Response (skipped - private repo):**
+```json
+{
+  "message": "Skipped - private repository",
+  "repository": "user/private-repo"
+}
+```
+
+**Response (skipped - wrong branch):**
 ```json
 {
   "message": "Skipped - not a push to main branch",

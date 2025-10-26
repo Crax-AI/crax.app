@@ -15,7 +15,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler('crax_backend.log')
     ]
 )
 logger = logging.getLogger(__name__)
@@ -129,19 +128,105 @@ def resolve_user_id(github_username: str) -> str | None:
     return None
 
 
-def create_post(author_id: str, description: str) -> dict[str, Any]:
+def store_commits(user_id: str, commits: list[dict], repository_id: str, repository_name: str, pushed_at: str) -> list[str]:
     """
-    Create a post in Supabase.
+    Store commits in the commits table.
+    
+    Args:
+        user_id: The user ID who made the commits
+        commits: List of commit objects from GitHub webhook
+        repository_id: GitHub repository ID
+        repository_name: Repository name
+        pushed_at: ISO timestamp when the push occurred
+        
+    Returns:
+        List of commit IDs that were stored
+    """
+    logger.info(f"Storing {len(commits)} commits for user {user_id}")
+    
+    commit_data = []
+    for commit in commits:
+        commit_entry = {
+            "user_id": user_id,
+            "committed_at": commit.get("timestamp"),
+            "pushed_at": pushed_at,
+            "commit_id": commit.get("id"),
+            "message": commit.get("message", ""),
+            "repository_id": repository_id,
+            "repository_name": repository_name,
+            "added_files": commit.get("added", []),
+            "removed_files": commit.get("removed", []),
+            "modified_files": commit.get("modified", [])
+        }
+        commit_data.append(commit_entry)
+    
+    logger.info("Inserting commits into Supabase commits table")
+    response = supabase.table("commits").insert(commit_data).execute()
+    
+    if not response.data:
+        logger.error("Failed to store commits - no data returned from Supabase")
+        raise Exception("Failed to store commits")
+    
+    commit_ids = [commit["id"] for commit in response.data]
+    logger.info(f"Successfully stored {len(commit_ids)} commits")
+    
+    return commit_ids
+
+
+def should_create_post(user_id: str, repository_id: str) -> tuple[bool, str]:
+    """
+    Use AI to determine if recent commits warrant a build update post.
+    
+    Args:
+        user_id: The user ID
+        repository_id: The repository ID
+        
+    Returns:
+        Tuple of (should_post, reasoning)
+    """
+    logger.info(f"Checking if commits warrant a post for user {user_id} in repo {repository_id}")
+    
+    # Get recent commits for this user and repository that haven't been posted about yet
+    response = supabase.table("commits").select("*").eq("user_id", user_id).eq("repository_id", repository_id).is_("post_id", "null").order("committed_at", desc=True).limit(10).execute()
+    
+    if not response.data:
+        logger.info("No recent commits found")
+        return False, "No recent commits found"
+    
+    recent_commits = response.data
+    logger.info(f"Found {len(recent_commits)} recent commits to evaluate")
+    
+    # Extract commit messages for AI evaluation
+    commit_messages = [commit["message"] for commit in recent_commits]
+    
+    try:
+        # Use Claude to determine if this warrants a post
+        from github import should_post_about_commits
+        should_post, reasoning = should_post_about_commits(commit_messages)
+        
+        logger.info(f"AI decision: {'POST' if should_post else 'SKIP'} - {reasoning}")
+        return should_post, reasoning
+        
+    except Exception as e:
+        logger.error(f"Error evaluating commits with AI: {str(e)}")
+        return False, f"Error evaluating commits: {str(e)}"
+
+
+def create_post(author_id: str, description: str, commit_ids: list[str]) -> dict[str, Any]:
+    """
+    Create a post in Supabase and link it to commits.
     
     Args:
         author_id: The user ID who authored the post
         description: The post content
+        commit_ids: List of commit IDs to link to this post
         
     Returns:
         The created post data
     """
     logger.info(f"Creating post for author_id: {author_id}")
     logger.info(f"Post description length: {len(description)} characters")
+    logger.info(f"Linking {len(commit_ids)} commits to this post")
     
     post_data = {
         "author_id": author_id,
@@ -161,7 +246,14 @@ def create_post(author_id: str, description: str) -> dict[str, Any]:
         raise Exception("Failed to create post")
     
     created_post = response.data[0]
-    logger.info(f"Post created successfully with ID: {created_post['id']}")
+    post_id = created_post["id"]
+    logger.info(f"Post created successfully with ID: {post_id}")
+    
+    # Link commits to this post
+    if commit_ids:
+        logger.info(f"Linking {len(commit_ids)} commits to post {post_id}")
+        update_response = supabase.table("commits").update({"post_id": post_id}).in_("id", commit_ids).execute()
+        logger.info(f"Updated {len(update_response.data) if update_response.data else 0} commits")
     
     return created_post
 
@@ -200,6 +292,18 @@ async def github_webhook(request: Request):
     payload = await request.json()
     logger.info(f"Payload keys: {list(payload.keys())}")
     
+    # Check if repository is public
+    repository = payload.get("repository", {})
+    is_private = repository.get("private", True)
+    logger.info(f"Repository private status: {is_private}")
+    
+    if is_private:
+        logger.info("Skipping private repository")
+        return {
+            "message": "Skipped - private repository",
+            "repository": repository.get("full_name", "unknown")
+        }
+    
     # Only process pushes to main branch
     ref = payload.get("ref")
     logger.info(f"Push reference: {ref}")
@@ -211,26 +315,21 @@ async def github_webhook(request: Request):
             "ref": ref
         }
     
-    logger.info("Processing push to main branch")
+    logger.info("Processing push to main branch of public repository")
     
-    # Extract commit messages
+    # Extract commits and repository info
     commits = payload.get("commits", [])
+    repository_id = str(repository.get("id", ""))
+    repository_name = repository.get("name", "")
+    pushed_at = repository.get("pushed_at", "")
+    
+    logger.info(f"Repository: {repository_name} (ID: {repository_id})")
     logger.info(f"Number of commits in push: {len(commits)}")
+    logger.info(f"Pushed at: {pushed_at}")
     
     if not commits:
         logger.warning("No commits found in push event")
         return {"message": "No commits found in push event"}
-    
-    commit_messages = [commit.get("message", "") for commit in commits if commit.get("message")]
-    logger.info(f"Valid commit messages found: {len(commit_messages)}")
-    
-    if not commit_messages:
-        logger.warning("No valid commit messages found")
-        return {"message": "No valid commit messages found"}
-    
-    logger.info("Commit messages:")
-    for i, msg in enumerate(commit_messages):
-        logger.info(f"  {i+1}. {msg[:100]}{'...' if len(msg) > 100 else ''}")
     
     # Resolve user ID from GitHub username
     sender = payload.get("sender", {})
@@ -253,8 +352,43 @@ async def github_webhook(request: Request):
     
     logger.info(f"User ID resolved: {user_id}")
     
+    # Store all commits in the database
+    logger.info("Storing commits in database")
+    try:
+        commit_ids = store_commits(user_id, commits, repository_id, repository_name, pushed_at)
+        logger.info(f"Stored {len(commit_ids)} commits")
+    except Exception as e:
+        logger.error(f"Failed to store commits: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to store commits: {str(e)}"
+        )
+    
+    # Check if recent commits warrant a post
+    logger.info("Evaluating if commits warrant a build update post")
+    try:
+        should_post, reasoning = should_create_post(user_id, repository_id)
+        logger.info(f"AI evaluation result: {'POST' if should_post else 'SKIP'}")
+        logger.info(f"Reasoning: {reasoning}")
+    except Exception as e:
+        logger.error(f"Failed to evaluate commits: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to evaluate commits: {str(e)}"
+        )
+    
+    if not should_post:
+        logger.info("Commits do not warrant a post - skipping post creation")
+        return {
+            "message": "Commits stored but no post created",
+            "reasoning": reasoning,
+            "commits_stored": len(commit_ids)
+        }
+    
     # Generate the post content using Claude
     logger.info("Generating post content using Claude")
+    commit_messages = [commit.get("message", "") for commit in commits if commit.get("message")]
+    
     try:
         post_content = summarize_commits(commit_messages)
         logger.info(f"Post content generated successfully - length: {len(post_content)} characters")
@@ -266,10 +400,10 @@ async def github_webhook(request: Request):
             detail=f"Failed to generate post summary: {str(e)}"
         )
     
-    # Create the post in Supabase
+    # Create the post in Supabase and link commits
     logger.info("Creating post in Supabase")
     try:
-        post = create_post(user_id, post_content)
+        post = create_post(user_id, post_content, commit_ids)
         logger.info(f"Post created successfully with ID: {post['id']}")
     except Exception as e:
         logger.error(f"Failed to create post: {str(e)}")
@@ -284,6 +418,8 @@ async def github_webhook(request: Request):
         "message": "Post created successfully",
         "post_id": post["id"],
         "content": post_content,
-        "commits_processed": len(commit_messages)
+        "commits_processed": len(commits),
+        "commits_linked": len(commit_ids),
+        "reasoning": reasoning
     }
 
