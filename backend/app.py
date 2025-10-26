@@ -92,17 +92,10 @@ async def github_webhook(request: Request):
     payload = await request.json()
     logger.info(f"Payload keys: {list(payload.keys())}")
     
-    # Check if repository is public
+    # Extract repository information
     repository = payload.get("repository", {})
     is_private = repository.get("private", True)
     logger.info(f"Repository private status: {is_private}")
-    
-    if is_private:
-        logger.info("Skipping private repository")
-        return {
-            "message": "Skipped - private repository",
-            "repository": repository.get("full_name", "unknown")
-        }
     
     # Only process pushes to main branch
     ref = payload.get("ref")
@@ -115,7 +108,7 @@ async def github_webhook(request: Request):
             "ref": ref
         }
     
-    logger.info("Processing push to main branch of public repository")
+    logger.info("Processing push to main branch of repository")
     
     # Extract commits and repository info
     commits = payload.get("commits", [])
