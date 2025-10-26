@@ -5,6 +5,7 @@ export type Post = Database["public"]["Tables"]["posts"]["Row"]
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"]
 export type Comment = Database["public"]["Tables"]["comments"]["Row"]
 export type Like = Database["public"]["Tables"]["likes"]["Row"]
+export type Commit = Database["public"]["Tables"]["commits"]["Row"]
 
 // Extended types with joins
 export interface PostWithAuthor extends Post {
