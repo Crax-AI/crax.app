@@ -12,6 +12,7 @@ On the right hand side, leave empty for now.
 */
 
 import { AppSidebar } from "@/components/app-sidebar"
+import { ActivitiesTimeline } from "@/components/activities-timeline"
 
 export default function AppLayout({
   children,
@@ -33,9 +34,7 @@ export default function AppLayout({
       {/* Right Sidebar - Hidden on small screens */}
       <div className="hidden lg:block w-80 border-l border-border bg-background">
         <div className="p-6">
-          {/* <p className="text-sm text-muted-foreground">
-            Right sidebar - coming soon
-          </p> */}
+          <ActivitiesTimeline />
         </div>
       </div>
     </div>
