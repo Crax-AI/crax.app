@@ -90,7 +90,7 @@ export async function GET(request: Request) {
             last_name: lastName,
             email: email,
             image_url: avatarUrl,
-            github_url: '', // Will be filled during onboarding
+            github_url: userMetadata.user_name ? `https://github.com/${userMetadata.user_name}` : '', // Filled from GitHub user_name if available
             linkedin_url: '', // Will be filled during onboarding
             username: username,
           });
