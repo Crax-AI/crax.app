@@ -54,7 +54,7 @@ Just respond with the post text, nothing else."""
     
     try:
         message = client.messages.create(
-            model="claude-4.5-haiku-20250514",
+            model="claude-haiku-4-5-20251001",
             max_tokens=200,
             messages=[
                 {"role": "user", "content": prompt}
@@ -139,7 +139,7 @@ Be selective - only post about meaningful progress."""
     
     try:
         message = client.messages.create(
-            model="claude-4.5-haiku-20250514",
+            model="claude-haiku-4-5-20251001",
             max_tokens=300,
             messages=[
                 {"role": "user", "content": prompt}

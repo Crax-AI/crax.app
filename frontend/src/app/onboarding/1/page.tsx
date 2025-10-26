@@ -14,6 +14,8 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function OnboardingPage1() {
   const [isConnectingLinkedIn, setIsConnectingLinkedIn] = useState(false);
+  const [githubConnected, setGithubConnected] = useState(false);
+  const [linkedinConnected, setLinkedinConnected] = useState(false);
 
   const handleLinkedInConnect = async () => {
     setIsConnectingLinkedIn(true);
@@ -30,6 +32,8 @@ export default function OnboardingPage1() {
       if (error) {
         console.error('LinkedIn connection error:', error);
         alert('Failed to connect LinkedIn. Please try again.');
+      } else {
+        setLinkedinConnected(true);
       }
     } catch (err) {
       console.error('LinkedIn connection error:', err);
@@ -37,6 +41,15 @@ export default function OnboardingPage1() {
     } finally {
       setIsConnectingLinkedIn(false);
     }
+  };
+
+  const handleGithubConnect = () => {
+    window.open(
+      "https://github.com/apps/crax-app/installations/new",
+      "githubPopup",
+      "width=600,height=700,noopener"
+    );
+    setGithubConnected(true);
   };
 
   return (
@@ -56,16 +69,11 @@ export default function OnboardingPage1() {
                 className="w-full flex items-center justify-center gap-2"
                 variant="outline"
                 type="button"
-                onClick={() => {
-                  window.open(
-                    "https://github.com/apps/crax-app/installations/new",
-                    "githubPopup",
-                    "width=600,height=700,noopener"
-                  );
-                }}
+                onClick={handleGithubConnect}
+                disabled={githubConnected}
               >
                 <Github className="h-4 w-4" />
-                Connect GitHub
+                {githubConnected ? "GitHub Connected" : "Connect GitHub"}
               </Button>
             </FieldContent>
             <FieldDescription>
@@ -75,7 +83,7 @@ export default function OnboardingPage1() {
 
           <Field>
             <FieldLabel className="block text-sm font-medium">
-              LinkedIn
+              LinkedIn*
             </FieldLabel>
             <FieldContent>
               <Button
@@ -83,20 +91,30 @@ export default function OnboardingPage1() {
                 variant="outline"
                 type="button"
                 onClick={handleLinkedInConnect}
-                disabled={isConnectingLinkedIn}
+                disabled={isConnectingLinkedIn || linkedinConnected}
               >
                 <Linkedin className="h-4 w-4" />
-                {isConnectingLinkedIn ? "Connecting..." : "Connect LinkedIn"}
+                {isConnectingLinkedIn ? "Connecting..." : linkedinConnected ? "LinkedIn Connected" : "Connect LinkedIn"}
               </Button>
             </FieldContent>
           </Field>
 
-          <Button asChild className="flex flex-row w-full items-center">
-            <Link href="/onboarding/2">
+          {githubConnected && linkedinConnected ? (
+            <Button asChild className="flex flex-row w-full items-center">
+              <Link href="/onboarding/2">
+                Continue
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          ) : (
+            <Button 
+              className="flex flex-row w-full items-center"
+              disabled={true}
+            >
               Continue
               <ChevronRight className="h-4 w-4" />
-            </Link>
-          </Button>
+            </Button>
+          )}
         </div>
       </div>
     </div>
