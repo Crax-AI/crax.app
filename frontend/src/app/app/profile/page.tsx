@@ -127,12 +127,7 @@ export default function ProfilePage() {
             
             <p className="text-muted-foreground mb-2">@{username}</p>
             <p className="text-foreground mb-4">
-              {profile.linkedin_data_raw ? 
-                (typeof profile.linkedin_data_raw === 'object' && profile.linkedin_data_raw !== null && 'summary' in profile.linkedin_data_raw ? 
-                  String(profile.linkedin_data_raw.summary) : 
-                  'Bio goes here. Tell people about yourself, your projects, and what you\'re working on.') :
-                'Bio goes here. Tell people about yourself, your projects, and what you\'re working on.'
-              }
+                {profile.about || "Bio goes here. Tell people about yourself, your projects, and what you're working on."}
             </p>
             
             <div className="flex gap-6 text-sm text-muted-foreground">

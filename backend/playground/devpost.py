@@ -1,3 +1,4 @@
+from typing import List
 from selenium.webdriver.remote.webelement import WebElement
 
 
@@ -8,12 +9,19 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from dotenv import load_dotenv
 from supabase import create_client, Client
+from pydantic import BaseModel
 import os
 
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SECRET_KEY = os.getenv("SUPABASE_SECRET_KEY")
+
+class ProjectPreview(BaseModel):
+    title: str
+    tagline: str
+    devpost_url: str
+    thumbnail_url: str
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_SECRET_KEY)
 
@@ -31,6 +39,7 @@ projects_count = len(project_containers)
 
 print(f"Projects count: {projects_count}")
 
+project_previews: List[ProjectPreview] = []
 for i, project_container in enumerate[WebElement](project_containers):
     # Get project summary data BEFORE navigating away
     project_url = project_container.get_attribute("href")
@@ -39,14 +48,24 @@ for i, project_container in enumerate[WebElement](project_containers):
     project_name = project_body_container.find_element(By.TAG_NAME, "h5").text.strip()
     project_tagline = project_body_container.find_element(By.CSS_SELECTOR, "p.tagline").text.strip()
 
+    project_previews.append(
+        ProjectPreview(
+            title=project_name,
+            tagline=project_tagline,
+            devpost_url=project_url,
+            thumbnail_url=project_thumbnail_url,
+        )
+    )
+
+for i, project in enumerate(project_previews):
     # Navigate to project page to get additional details
-    driver.get(project_url)
+    driver.get(project.devpost_url)
     
     try:
         project_details_container = driver.find_element(By.ID, "app-details-left")
         project_description = project_details_container.find_element(By.XPATH, "./div[not(@id)]").text.strip()
     except Exception as e:
-        print(f"Error getting project description for {project_name}: {e}")
+        print(f"Error getting project description for {project.title}: {e}")
         project_description = ""
 
     try:
@@ -71,27 +90,21 @@ for i, project_container in enumerate[WebElement](project_containers):
         time_elem = driver.find_element(By.CSS_SELECTOR, "time.timeago")
         started_at = time_elem.get_attribute("datetime") if time_elem else None
     except Exception as e:
-        print(f"Error getting start date for {project_name}: {e}")
+        print(f"Error getting start date for {project.title}: {e}")
         started_at = None
 
-    # Navigate back to the main page to refresh the project containers for next iteration
-    driver.get(devpost_url)
-    
-    # Re-find project containers after navigation back
-    project_containers = driver.find_elements(By.CSS_SELECTOR, "a.link-to-software")
-
-    # supabase.table("projects").insert({
-    #     "user_id": user_id,
-    #     "title": project_name,
-    #     "tagline": project_tagline,
-    #     "description": project_description,
-    #     "github_url": github_url,
-    #     "devpost_url": project_url,
-    #     "thumbnail_url": project_thumbnail_url,
-    #     "started_at": started_at,
-    #     "type": "hackathon",
-    #     "is_public": True,
-    # }).execute()
+    supabase.table("projects").insert({
+        "user_id": user_id,
+        "title": project.title,
+        "tagline": project.tagline,
+        "description": project_description,
+        "github_url": github_url,
+        "devpost_url": project.devpost_url,
+        "thumbnail_url": project.thumbnail_url,
+        "started_at": started_at,
+        "type": "hackathon",
+        "is_public": True,
+    }).execute()
     
     print(f"Project: {project_name}")
     print(f"Description: {project_description}")
