@@ -4,6 +4,7 @@ It shows:
   - Profile picture
   - Full name
   - Username (from GitHub URL)
+  - Affiliation (if available)
   - Bio/about text (truncated)
   - Join date
   - Click to navigate to their profile page
@@ -54,7 +55,7 @@ export const Person = ({ profile }: PersonProps) => {
   const joinDate = formatJoinDate(profile.created_at)
   
   const handleClick = () => {
-    router.push(`/app/user/${profile.id}`)
+    router.push(`/app/users/${profile.id}`)
   }
   
   return (
@@ -81,6 +82,15 @@ export const Person = ({ profile }: PersonProps) => {
               @{username}
             </span>
           </div>
+          
+          {/* Affiliation */}
+          {profile.affiliation && (
+            <div className="mb-2">
+              <span className="text-sm text-muted-foreground">
+                {profile.affiliation}
+              </span>
+            </div>
+          )}
           
           {/* Bio */}
           <p className="text-foreground text-sm mb-3 line-clamp-3">

@@ -36,7 +36,7 @@ function transformPostData(post: PostWithDetails): PostData {
       tagline: post.author.headline || '',
       affiliation: post.author.affiliation,
       profile_picture_url: post.author.image_url,
-      profile_url: `/app/user/${post.author.id}`
+      profile_url: `/app/users/${post.author.id}`
     },
     created_at: post.created_at,
     updated_at: post.updated_at,
@@ -234,7 +234,7 @@ export async function createPost(
       tagline: postWithAuthor.author.headline || '',
       affiliation: postWithAuthor.author.affiliation,
       profile_picture_url: postWithAuthor.author.image_url,
-      profile_url: `/app/user/${postWithAuthor.author.id}`
+      profile_url: `/app/users/${postWithAuthor.author.id}`
     },
     created_at: postWithAuthor.created_at,
     updated_at: postWithAuthor.updated_at,
