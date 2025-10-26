@@ -218,8 +218,8 @@ export default function UserPage() {
     )
   }
 
-  const fullName = `${userProfile.first_name} ${userProfile.last_name}`
-  const username = userProfile.username || 'user'
+  const fullName = `${userProfile.first_name} ${userProfile.last_name}`;
+  const username = userProfile.username || 'user';
 
   return (
     <div className="flex flex-col h-full">
