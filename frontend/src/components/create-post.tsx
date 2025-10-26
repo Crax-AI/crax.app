@@ -114,10 +114,26 @@ export function CreatePost({ onPostCreated }: CreatePostProps) {
   const uploadToSupabase = async (file: File): Promise<string> => {
     const supabase = createClient()
     
-    // Generate unique filename by appending UUID to original filename
-    const fileExtension = file.name.split('.').pop()
-    const fileNameWithoutExtension = file.name.substring(0, file.name.lastIndexOf('.'))
-    const fileName = `${fileNameWithoutExtension}-${uuidv4()}.${fileExtension}`
+    // Sanitize filename: replace spaces with underscores and remove special characters
+    const sanitizeFileName = (name: string): string => {
+      // Split into name and extension
+      const lastDotIndex = name.lastIndexOf('.')
+      const hasExtension = lastDotIndex > 0 && lastDotIndex < name.length - 1
+      
+      const nameWithoutExt = hasExtension ? name.substring(0, lastDotIndex) : name
+      const extension = hasExtension ? name.substring(lastDotIndex + 1) : ''
+      
+      // Replace spaces with underscores and remove any other special characters except dots, hyphens, underscores
+      const sanitized = nameWithoutExt
+        .replace(/\s+/g, '_') // Replace spaces with underscores
+        .replace(/[^a-zA-Z0-9._-]/g, '_') // Replace special chars with underscores
+        .replace(/_{2,}/g, '_') // Replace multiple underscores with single
+        .replace(/^_+|_+$/g, '') // Remove leading/trailing underscores
+      
+      return hasExtension ? `${sanitized}-${uuidv4()}.${extension}` : `${sanitized}-${uuidv4()}`
+    }
+    
+    const fileName = sanitizeFileName(file.name)
     
     // Determine folder based on file type
     const folder = file.type.startsWith('image/') ? 'images' : 'videos'
