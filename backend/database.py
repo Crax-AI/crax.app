@@ -53,22 +53,26 @@ def store_commits(supabase: Client, user_id: str, commits: list[dict], repositor
     Returns:
         List of commit IDs that were stored
     """
-    from utils import convert_unix_to_iso
+    from utils import convert_timestamp_to_iso
     
     logger.info(f"Storing {len(commits)} commits for user {user_id}")
     
+    # Convert pushed_at timestamp to ISO format
+    pushed_at_iso = convert_timestamp_to_iso(pushed_at)
+    logger.info(f"Converted pushed_at: {pushed_at} -> {pushed_at_iso}")
+    
     commit_data = []
     for i, commit in enumerate(commits):
-        # Convert Unix timestamp to ISO format for PostgreSQL
+        # Convert commit timestamp to ISO format for PostgreSQL
         original_timestamp = commit.get("timestamp")
-        committed_at = convert_unix_to_iso(original_timestamp)
+        committed_at = convert_timestamp_to_iso(original_timestamp)
         
         logger.info(f"Commit {i+1}: timestamp {original_timestamp} -> {committed_at}")
         
         commit_entry = {
             "user_id": user_id,
             "committed_at": committed_at,
-            "pushed_at": pushed_at,
+            "pushed_at": pushed_at_iso,
             "commit_id": commit.get("id"),
             "message": commit.get("message", ""),
             "repository_id": repository_id,

@@ -8,25 +8,33 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 
-def convert_unix_to_iso(unix_timestamp: str | int | None) -> str | None:
+def convert_timestamp_to_iso(timestamp: str | int | None) -> str | None:
     """
-    Convert Unix timestamp to ISO format string for PostgreSQL.
+    Convert timestamp to ISO format string for PostgreSQL.
+    Handles both Unix timestamps and ISO format strings.
     
     Args:
-        unix_timestamp: Unix timestamp as string or int
+        timestamp: Unix timestamp (int/str) or ISO format string
         
     Returns:
         ISO format timestamp string or None if invalid
     """
-    if not unix_timestamp:
+    if timestamp is None:
         return None
     
     try:
-        # Convert to int if it's a string
-        if isinstance(unix_timestamp, str):
-            timestamp_int = int(unix_timestamp)
+        # If it's already an ISO format string (contains 'T' or '-'), return as-is
+        if isinstance(timestamp, str) and ('T' in timestamp or '-' in timestamp):
+            # Validate it's a proper ISO format by trying to parse it
+            datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+            logger.debug(f"Timestamp {timestamp} is already in ISO format")
+            return timestamp
+        
+        # Convert to int if it's a string (Unix timestamp)
+        if isinstance(timestamp, str):
+            timestamp_int = int(timestamp)
         else:
-            timestamp_int = unix_timestamp
+            timestamp_int = timestamp
         
         # Validate timestamp range (reasonable bounds for Unix timestamps)
         # Min: Jan 1, 1970 (0), Max: Jan 1, 2100 (4102444800)
@@ -38,11 +46,11 @@ def convert_unix_to_iso(unix_timestamp: str | int | None) -> str | None:
         dt = datetime.fromtimestamp(timestamp_int)
         iso_string = dt.isoformat()
         
-        logger.debug(f"Converted timestamp {timestamp_int} to {iso_string}")
+        logger.debug(f"Converted Unix timestamp {timestamp_int} to {iso_string}")
         return iso_string
         
     except (ValueError, TypeError, OSError) as e:
-        logger.error(f"Failed to convert timestamp {unix_timestamp}: {str(e)}")
+        logger.error(f"Failed to convert timestamp {timestamp}: {str(e)}")
         return None
 
 
