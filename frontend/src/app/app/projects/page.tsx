@@ -10,19 +10,36 @@ Each Project will have:
   - Start date
   - Author information
 */
+"use client"
 
+import { useState, useEffect } from "react"
 import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { Project } from "@/components/project"
-import { Tables } from "@/lib/supabase/database.types"
-
-type ProjectWithProfile = Tables<"projects"> & {
-  profiles: Tables<"profiles">
-}
+import { Project as ProjectComponent } from "@/components/project"
+import type { Project } from "@/components/project"
+import { getAllProjects } from "@/lib/supabase/posts"
 
 export default function ProjectsPage() {
-  // TODO: Replace with actual data fetching
-  const projects: ProjectWithProfile[] = []
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchProjects() {
+      try {
+        setLoading(true)
+        const fetchedProjects = await getAllProjects(50, 0)
+        setProjects(fetchedProjects)
+      } catch (err) {
+        console.error("Error fetching projects:", err)
+        setError("Failed to load projects. Please try again.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProjects()
+  }, [])
 
   return (
     <div className="flex flex-col h-full">
@@ -41,17 +58,25 @@ export default function ProjectsPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-6">
-        {projects.length === 0 ? (
+      <div className="flex-1 overflow-y-auto">
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Loading projects...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-red-500">{error}</p>
+          </div>
+        ) : projects.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">
               Projects will appear here once users start sharing their work.
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="p-6 space-y-4">
             {projects.map((project) => (
-              <Project key={project.id} project={project} />
+              <ProjectComponent key={project.id} project={project} />
             ))}
           </div>
         )}

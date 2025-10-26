@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { ExternalLink, Github, Calendar } from "lucide-react"
 import Image from "next/image"
 
-type Project = Tables<"projects"> & {
+export type Project = Tables<"projects"> & {
   profiles: Tables<"profiles">
 }
 

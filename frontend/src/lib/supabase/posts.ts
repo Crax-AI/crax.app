@@ -459,6 +459,31 @@ export async function getUserProjects(userId: string): Promise<Tables<"projects"
   return projects || []
 }
 
+export type ProjectWithProfile = Tables<"projects"> & {
+  profiles: Tables<"profiles">
+}
+
+export async function getAllProjects(limit: number = 50, offset: number = 0): Promise<ProjectWithProfile[]> {
+  const supabase = createClient()
+
+  const { data: projects, error } = await supabase
+    .from("projects")
+    .select(`
+      *,
+      profiles:profiles!projects_user_id_fkey(*)
+    `)
+    .eq("is_public", true)
+    .order("started_at", { ascending: false })
+    .range(offset, offset + limit - 1)
+
+  if (error) {
+    console.error("Error fetching projects:", error)
+    return []
+  }
+
+  return projects as ProjectWithProfile[] || []
+}
+
 export async function getUserProfile(userId: string): Promise<Profile | null> {
   const supabase = createClient()
 
