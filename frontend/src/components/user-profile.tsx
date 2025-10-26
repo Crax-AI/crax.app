@@ -54,7 +54,7 @@ export function UserProfile() {
                     {profile.first_name} {profile.last_name}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
-                    @{user.email?.split("@")[0] || "user"}
+                    @{profile.username || "user"}
                   </p>
                 </div>
               </div>
