@@ -32,7 +32,7 @@ export default function AppLayout({
       </main>
       
       {/* Right Sidebar - Hidden on small screens */}
-      <div className="hidden lg:block w-80 border-l border-border bg-background">
+      <div className="hidden lg:block w-80 border-l border-border bg-background overflow-y-auto">
         <div className="p-6">
           <ActivitiesTimeline />
         </div>
