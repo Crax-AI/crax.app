@@ -121,9 +121,12 @@ async def github_webhook(request: Request):
     commits = payload.get("commits", [])
     repository_id = str(repository.get("id", ""))
     repository_name = repository.get("name", "")
+    repository_owner = repository.get("owner", {})
+    owner_name = repository_owner.get("name", "")
     pushed_at = repository.get("pushed_at", "")
     
     logger.info(f"Repository: {repository_name} (ID: {repository_id})")
+    logger.info(f"Repository owner: {owner_name}")
     logger.info(f"Number of commits in push: {len(commits)}")
     logger.info(f"Pushed at: {pushed_at}")
     
@@ -155,7 +158,7 @@ async def github_webhook(request: Request):
     # Store all commits in the database
     logger.info("Storing commits in database")
     try:
-        commit_ids = store_commits(supabase, user_id, commits, repository_id, repository_name, pushed_at)
+        commit_ids = store_commits(supabase, user_id, commits, repository_id, repository_name, owner_name, pushed_at)
         logger.info(f"Stored {len(commit_ids)} commits")
     except Exception as e:
         logger.error(f"Failed to store commits: {str(e)}")

@@ -59,12 +59,14 @@ export type Database = {
       commits: {
         Row: {
           added_files: string[]
+          ai_message: string | null
           commit_id: string
           committed_at: string
           created_at: string
           id: string
           message: string
           modified_files: string[]
+          owner_name: string
           post_id: string | null
           pushed_at: string
           removed_files: string[]
@@ -74,12 +76,14 @@ export type Database = {
         }
         Insert: {
           added_files?: string[]
+          ai_message?: string | null
           commit_id: string
           committed_at: string
           created_at?: string
           id?: string
           message: string
           modified_files?: string[]
+          owner_name: string
           post_id?: string | null
           pushed_at: string
           removed_files?: string[]
@@ -89,12 +93,14 @@ export type Database = {
         }
         Update: {
           added_files?: string[]
+          ai_message?: string | null
           commit_id?: string
           committed_at?: string
           created_at?: string
           id?: string
           message?: string
           modified_files?: string[]
+          owner_name?: string
           post_id?: string | null
           pushed_at?: string
           removed_files?: string[]

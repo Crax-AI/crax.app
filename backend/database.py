@@ -38,7 +38,7 @@ def resolve_user_id(supabase: Client, github_username: str) -> str | None:
     return None
 
 
-def store_commits(supabase: Client, user_id: str, commits: list[dict], repository_id: str, repository_name: str, pushed_at: str) -> list[str]:
+def store_commits(supabase: Client, user_id: str, commits: list[dict], repository_id: str, repository_name: str, owner_name: str, pushed_at: str) -> list[str]:
     """
     Store commits in the commits table.
     
@@ -48,6 +48,7 @@ def store_commits(supabase: Client, user_id: str, commits: list[dict], repositor
         commits: List of commit objects from GitHub webhook
         repository_id: GitHub repository ID
         repository_name: Repository name
+        owner_name: Repository owner's GitHub username
         pushed_at: ISO timestamp when the push occurred
         
     Returns:
@@ -77,6 +78,7 @@ def store_commits(supabase: Client, user_id: str, commits: list[dict], repositor
             "message": commit.get("message", ""),
             "repository_id": repository_id,
             "repository_name": repository_name,
+            "owner_name": owner_name,
             "added_files": commit.get("added", []),
             "removed_files": commit.get("removed", []),
             "modified_files": commit.get("modified", [])
